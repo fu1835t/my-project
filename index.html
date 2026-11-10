@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>磚塊勇者：元素秘境 - Brick Hero: Elemental Realms</title>
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+
+  <div id="game-wrapper">
+    <!-- 主遊戲畫布 -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- 頂部 HUD -->
+    <div id="hud-top">
+      <div class="hud-group">
+        <div class="hud-item" style="color: #38bdf8;">
+          <span id="hud-world-stage">翡翠森林 · 1-1 森林外緣</span>
+        </div>
+        <div class="hud-item" style="color: #f1f5f9;">
+          分數：<span id="hud-score">0</span>
+        </div>
+        <div class="hud-item" style="color: #fbbf24;">
+          金幣：<span id="hud-gold">0</span>
+        </div>
+      </div>
+
+      <div class="hud-group">
+        <div class="hud-item" style="color: #f87171;">
+          HP：
+          <div class="bar-container">
+            <div id="hp-bar-fill" class="bar-fill hp-fill" style="width: 100%;"></div>
+          </div>
+          <span id="hp-text" style="font-size: 11px; margin-left: 4px;">3 / 3</span>
+        </div>
+        <div class="hud-item" style="color: #60a5fa;">
+          MP：
+          <div class="bar-container">
+            <div id="mp-bar-fill" class="bar-fill mp-fill" style="width: 40%;"></div>
+          </div>
+          <span id="mp-text" style="font-size: 11px; margin-left: 4px;">40 / 100</span>
+        </div>
+        <button id="btn-mute" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px; pointer-events: auto;">音效開</button>
+      </div>
+    </div>
+
+    <!-- Boss 血條 HUD -->
+    <div id="boss-bar-wrapper" class="boss-bar-wrapper hidden">
+      <div class="boss-title-row">
+        <span id="boss-name">遠古守護者：綠茵巨靈</span>
+        <span style="color: #ef4444;">BOSS</span>
+      </div>
+      <div class="boss-hp-bar">
+        <div id="boss-hp-fill" class="boss-hp-fill" style="width: 100%;"></div>
+      </div>
+    </div>
+
+    <!-- Boss 登場警示橫幅 -->
+    <div id="boss-warning-banner" class="hidden">
+      <div id="boss-warning-text">警告：遠古守護者現身！</div>
+    </div>
+
+    <!-- 底部主動技能 HUD -->
+    <div id="hud-bottom">
+      <div id="skill-q" class="skill-slot ready" title="聖光護盾：在底線產生能量防護網，防止漏球一次">
+        <span class="skill-key">Q</span>
+        <span class="skill-icon">護盾</span>
+        <span class="skill-cost">30 MP</span>
+        <div id="cd-q" class="skill-cooldown-overlay"></div>
+      </div>
+
+      <div id="skill-w" class="skill-slot ready" title="烈焰貫穿：使彈珠點燃為烈焰球，穿透並秒殺普通磚塊">
+        <span class="skill-key">W</span>
+        <span class="skill-icon">烈焰</span>
+        <span class="skill-cost">40 MP</span>
+        <div id="cd-w" class="skill-cooldown-overlay"></div>
+      </div>
+
+      <div id="skill-e" class="skill-slot ready" title="雷霆雙極：自板子左右兩側發射貫穿雷電射線，摧毀上方所有磚塊並痛擊 Boss">
+        <span class="skill-key">E</span>
+        <span class="skill-icon">雷霆</span>
+        <span class="skill-cost">50 MP</span>
+        <div id="cd-e" class="skill-cooldown-overlay"></div>
+      </div>
+    </div>
+
+    <!-- 初始標題畫面 -->
+    <div id="overlay-title" class="ui-overlay">
+      <h1 class="game-title">磚塊勇者：元素秘境</h1>
+      <p class="game-subtitle">結合冒險 RPG 與元素 Boss 戰的全新彈珠冒險</p>
+
+      <div class="feature-box">
+        <div class="feature-item">
+          <h3>翡翠森林 (Forest)</h3>
+          <p>具備自癒能力的蔓藤磚與毒孢阻礙。迎擊遠古神木靈的橡實爆彈與根鬚防禦！</p>
+        </div>
+        <div class="feature-item">
+          <h3>灼熱沙漠 (Desert)</h3>
+          <p>水平漂移的流沙磚與 TNT 連鎖炸藥。抵擋法老巨像的天降烈日裁決雷射！</p>
+        </div>
+        <div class="feature-item">
+          <h3>蒼藍深淵 (Ocean)</h3>
+          <p>堅固的氣泡護盾與連鎖冰晶碎裂。挑戰深海霸主克拉肯的暗黑漩渦與多重散射！</p>
+        </div>
+      </div>
+
+      <button id="btn-start-game" class="btn">開始冒險</button>
+
+      <div class="controls-hint">
+        操作方式：滑鼠移動 或 A/D、方向鍵控制板子 | 空白鍵或滑鼠左鍵發射彈珠 | Q、W、E 鍵施放冒險技能
+      </div>
+    </div>
+
+    <!-- 營地商店 / 升級畫面 -->
+    <div id="overlay-shop" class="ui-overlay hidden">
+      <div class="shop-container">
+        <div class="shop-header">
+          <div>
+            <h2 style="font-size: 22px; color: #38bdf8;">冒險者營地</h2>
+            <p style="font-size: 13px; color: #94a3b8;">關卡完成！使用收集到的金幣進行裝備強化。</p>
+          </div>
+          <div style="font-size: 18px; color: #fbbf24; font-weight: bold;">
+            持有金幣：<span id="shop-gold-display">0</span>
+          </div>
+        </div>
+
+        <div class="shop-grid">
+          <div class="shop-item">
+            <div class="shop-item-info">
+              <h4>神聖體質 (Max HP +1) <span id="level-maxHp" style="color: #60a5fa; font-size: 12px;">Lv.0</span></h4>
+              <p>提升板子的生命值上限與當前生命。</p>
+            </div>
+            <div class="shop-item-cost">
+              <span id="cost-maxHp" class="shop-price">60 金幣</span>
+              <button id="btn-buy-maxHp" class="btn" style="padding: 6px 14px; font-size: 12px;">強化</button>
+            </div>
+          </div>
+
+          <div class="shop-item">
+            <div class="shop-item-info">
+              <h4>板體加寬 (Paddle Width) <span id="level-width" style="color: #60a5fa; font-size: 12px;">Lv.0</span></h4>
+              <p>擴展勇者之板接球面積 (+15px)。</p>
+            </div>
+            <div class="shop-item-cost">
+              <span id="cost-width" class="shop-price">45 金幣</span>
+              <button id="btn-buy-width" class="btn" style="padding: 6px 14px; font-size: 12px;">強化</button>
+            </div>
+          </div>
+
+          <div class="shop-item">
+            <div class="shop-item-info">
+              <h4>破壞重擊 (Ball Damage) <span id="level-damage" style="color: #60a5fa; font-size: 12px;">Lv.0</span></h4>
+              <p>提升所有彈珠對多血磚塊與 Boss 的撞擊傷害 (+1)。</p>
+            </div>
+            <div class="shop-item-cost">
+              <span id="cost-damage" class="shop-price">75 金幣</span>
+              <button id="btn-buy-damage" class="btn" style="padding: 6px 14px; font-size: 12px;">強化</button>
+            </div>
+          </div>
+
+          <div class="shop-item">
+            <div class="shop-item-info">
+              <h4>魔力湧流 (Mana Regen) <span id="level-manaRegen" style="color: #60a5fa; font-size: 12px;">Lv.0</span></h4>
+              <p>提升每秒被動魔力回復速率 (+2.0 MP/s)。</p>
+            </div>
+            <div class="shop-item-cost">
+              <span id="cost-manaRegen" class="shop-price">40 金幣</span>
+              <button id="btn-buy-manaRegen" class="btn" style="padding: 6px 14px; font-size: 12px;">強化</button>
+            </div>
+          </div>
+
+          <div class="shop-item" style="grid-column: span 2;">
+            <div class="shop-item-info">
+              <h4>極速吟唱 (Skill Haste) <span id="level-cooldown" style="color: #60a5fa; font-size: 12px;">Lv.0</span></h4>
+              <p>縮短所有主動技能的冷卻時間 15%。</p>
+            </div>
+            <div class="shop-item-cost">
+              <span id="cost-cooldown" class="shop-price">50 金幣</span>
+              <button id="btn-buy-cooldown" class="btn" style="padding: 6px 14px; font-size: 12px;">強化</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: right;">
+          <button id="btn-shop-continue" class="btn">前往下一關卡</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 遊戲失敗畫面 -->
+    <div id="overlay-gameover" class="ui-overlay hidden">
+      <h2 style="font-size: 36px; color: #ef4444; margin-bottom: 12px; font-weight: 800;">冒險中途殞落</h2>
+      <p style="color: #94a3b8; margin-bottom: 24px;">最終累積得分：<span id="final-score" style="color: #f87171; font-weight: bold;">0</span></p>
+      <button id="btn-restart" class="btn">重新挑戰</button>
+    </div>
+
+    <!-- 冒險通關通勝畫面 -->
+    <div id="overlay-victory" class="ui-overlay hidden">
+      <h2 style="font-size: 38px; color: #34d399; margin-bottom: 12px; font-weight: 800;">元素秘境征服達成</h2>
+      <p style="color: #e2e8f0; margin-bottom: 8px;">恭喜勇者！你已成功擊敗三大元素霸主，恢復了秘境的和諧！</p>
+      <p style="color: #94a3b8; margin-bottom: 24px;">
+        總得分：<span id="final-victory-score" style="color: #fbbf24; font-weight: bold;">0</span> | 
+        總收集金幣：<span id="final-victory-gold" style="color: #fbbf24; font-weight: bold;">0</span>
+      </p>
+      <button id="btn-victory-restart" class="btn">再次啟程</button>
+    </div>
+  </div>
+
+  <!-- 模組化遊戲腳本載入 -->
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/ball.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/bricks.js"></script>
+  <script src="js/bosses.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
